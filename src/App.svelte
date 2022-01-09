@@ -55,7 +55,19 @@ function TrackMap (elementId) {
   	self.map = map;
 }
 
-
+function getLocations() {
+	fetch("", {
+      method: 'POST',
+    //   headers: {
+    //     'Content-Type': 'application/json;charset=utf-8',
+    //   },
+    //   body: data,
+    })
+    .then(response => response.json())
+    .then(result => {
+      console.log(result)
+    });
+}
 
 onMount(() => {
 
@@ -66,6 +78,7 @@ onMount(() => {
 
 <main>
 	<div id="map"></div>
+	<button on:click={getLocations} style="position:absolute; right:0; top:0;">refresh</button>
 </main>
 
 <style>
