@@ -19,7 +19,7 @@ import VectorLayer from 'ol/layer/Vector';
 
 import {fromLonLat} from 'ol/proj';
 
-let mapView;
+let map;
 let data;
 let positions = [];
 let devices = [];
@@ -70,6 +70,13 @@ $: {
 			}
 		});
 	})
+	if (map && markerSource.getFeatures().length > 0) {
+		map.getView().fit(markerSource.getExtent(), {
+			duration: 1000,
+			maxZoom: 19,
+			padding: [100, 100, 100, 100],
+		});
+	}
 }
 
 const bgBasemap = new TileLayer({
@@ -94,7 +101,7 @@ function sleep(ms) {
 
 function TrackMap (elementId) {
 	const el = document.getElementById(elementId);
-	const map = new Map({
+	map = new Map({
 		target: el,
 		view: new View({
 			center: mgFountain,
@@ -151,7 +158,7 @@ async function getWeird() {
 }
 
 onMount(() => {
-	mapView = new TrackMap("map");
+	const mapView = new TrackMap("map");
 	startSession();
 	getWeird();
 });
