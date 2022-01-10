@@ -87,7 +87,7 @@ function openWebSocket() {
 }
 
 function startSession () {
-	fetch("http://tracker.toulouse.casa:8082/api/session?token="+tcToken, {
+	fetch("https://tracker.toulouse.casa:8082/api/session?token="+tcToken, {
 		method: "POST",
 		dataType: "json",
 		contentType: "application/json",
