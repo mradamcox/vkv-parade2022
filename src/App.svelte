@@ -64,15 +64,12 @@ $: {
 			markerSource.addFeature(feature);
 		}
 		positions.forEach( function (position) {
-			console.log(position.deviceId)
-			console.log(feature.getId())
 			if (position.deviceId == feature.getId()) {
 				let p = fromLonLat([position.longitude, position.latitude])
 				feature.setGeometry(new Point(p))
 			}
 		});
 	})
-	console.log(markerSource.getFeatures())
 }
 
 const bgBasemap = new TileLayer({
