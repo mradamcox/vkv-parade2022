@@ -72,7 +72,7 @@ function TrackMap (elementId) {
 
 function openWebSocket() {
 
-	const socket = new WebSocket("ws://tracker.toulouse.casa:8082/api/socket");
+	const socket = new WebSocket("wss://tracker.toulouse.casa/gps/api/socket");
 
 	socket.onclose = function (event) {
 		console.log("closed socket");
@@ -87,7 +87,7 @@ function openWebSocket() {
 }
 
 function startSession () {
-	fetch("https://tracker.toulouse.casa:8082/api/session?token="+tcToken, {
+	fetch("https://tracker.toulouse.casa/gps/api/session?token="+tcToken, {
 		method: "POST",
 		dataType: "json",
 		contentType: "application/json",
