@@ -22,7 +22,10 @@ let data;
 let positions = [];
 let devices = [];
 
-let mb_api = "pk.eyJ1IjoibGVnaW9uZ2lzIiwiYSI6ImNreTdmMXR6cjE0dHQyc29ieHUxcG54bnYifQ.8We5T2uz0xnEHO5gYzUIUw";
+const mbToken = MAPBOX_TOKEN;
+const tcToken = TC_TOKEN;
+
+const mgFountain = fromLonLat([-90.0947302, 30.0255355]);
 
 const osmLayer = new TileLayer({
   source: new OSM(),
@@ -75,17 +78,13 @@ function openWebSocket() {
 }
 
 function startSession () {
-	fetch("http://tracker.toulouse.casa:8082/api/session", {
+	fetch("http://tracker.toulouse.casa:8082/api/session?token="+tcToken, {
 		method: "POST",
 		dataType: "json",
 		contentType: "application/json",
 		headers: {
 			"Content-Type": "application/json",
 		},
-		body: JSON.stringify({
-                        "email": "email",
-                        "password": "password",
-                }),
 	})
 	.then( openWebSocket() );
 }
