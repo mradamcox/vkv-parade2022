@@ -18,6 +18,9 @@ import ImageLayer from 'ol/layer/Image';
 import VectorLayer from 'ol/layer/Vector';
 
 let mapView;
+let data;
+let positions = [];
+let devices = [];
 
 let mb_api = "pk.eyJ1IjoibGVnaW9uZ2lzIiwiYSI6ImNreTdmMXR6cjE0dHQyc29ieHUxcG54bnYifQ.8We5T2uz0xnEHO5gYzUIUw";
 
@@ -33,8 +36,8 @@ const imageryLayer = new TileLayer({
 });
 
 const basemaps = [
-  { id: "osm", layer: osmLayer, label: "Streets" },
-  { id: "satellite", layer: imageryLayer, label: "Streets+Satellite" },
+	{ id: "osm", layer: osmLayer, label: "Streets" },
+	{ id: "satellite", layer: imageryLayer, label: "Streets+Satellite" },
 ]
 let currentBasemap = basemaps[0].id;
 
@@ -50,47 +53,75 @@ function TrackMap (elementId) {
 		})
 	});
 
-  	map.addLayer(imageryLayer)
+	map.addLayer(imageryLayer)
 
-  	self.map = map;
+	self.map = map;
 }
 
-function getLocations() {
-	fetch("", {
-      method: 'POST',
-    //   headers: {
-    //     'Content-Type': 'application/json;charset=utf-8',
-    //   },
-    //   body: data,
-    })
-    .then(response => response.json())
-    .then(result => {
-      console.log(result)
-    });
+function openWebSocket() {
+
+	const socket = new WebSocket("ws://tracker.toulouse.casa:8082/api/socket");
+
+	socket.onclose = function (event) {
+		console.log("closed socket");
+	}
+
+	socket.onmessage = function (event) {
+		data = JSON.parse(event.data);
+		if (data.positions) { positions = data.positions }
+		if (data.devices) { devices = data.devices }
+	}
+
+}
+
+function startSession () {
+	fetch("http://tracker.toulouse.casa:8082/api/session", {
+		method: "POST",
+		dataType: "json",
+		contentType: "application/json",
+		headers: {
+			"Content-Type": "application/json",
+		},
+		body: JSON.stringify({
+                        "email": "email",
+                        "password": "password",
+                }),
+	})
+	.then( openWebSocket() );
 }
 
 onMount(() => {
 
 	mapView = new TrackMap("map");
+	startSession();
 });
 
 </script>
 
 <main>
 	<div id="map"></div>
-	<button on:click={getLocations} style="position:absolute; right:0; top:0;">refresh</button>
+	<button disabled style="position:absolute; right:0; top:0;">refresh</button>
+	<div style="position:absolute; right:0; top:50px; background:red;">
+		{#each devices as device}
+		{device.id}: {device.name}
+			{#each positions as position}
+				{#if position.deviceId == device.id}
+					{position.latitude}, {position.longitude}
+				{/if}
+			{/each}
+		{/each}
+	</div>
 </main>
 
 <style>
-	#map {
-		width: 100%;
-		max-width: 800px;
-		height: 100vh;
-	}
+#map {
+	width: 100%;
+	height: 100vh;
+}
 
-	@media (min-width: 640px) {
-		main {
-			max-width: none;
-		}
+@media (min-width: 640px) {
+	main {
+		max-width: none;
 	}
+}
 </style>
