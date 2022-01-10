@@ -17,6 +17,8 @@ import TileLayer from 'ol/layer/Tile';
 import ImageLayer from 'ol/layer/Image';
 import VectorLayer from 'ol/layer/Vector';
 
+import {fromLonLat} from 'ol/proj';
+
 let mapView;
 let data;
 let positions = [];
@@ -31,32 +33,39 @@ const osmLayer = new TileLayer({
   source: new OSM(),
 })
 
-const imageryLayer = new TileLayer({
-  source: new XYZ({
-    url: 'https://api.mapbox.com/styles/v1/mapbox/satellite-streets-v10/tiles/{z}/{x}/{y}?access_token='+mb_api,
-    tileSize: 512,
-  })
+const bgBasemap = new TileLayer({
+	source: new XYZ({
+		// url: 'https://api.mapbox.com/styles/v1/mapbox/satellite-streets-v10/tiles/{z}/{x}/{y}?access_token='+mbToken,
+		url: 'https://api.mapbox.com/styles/v1/legiongis/ckg13im88155l19pdgv294lu0/tiles/{z}/{x}/{y}?access_token='+mbToken,
+		tileSize: 512,
+	})	
 });
 
-const basemaps = [
-	{ id: "osm", layer: osmLayer, label: "Streets" },
-	{ id: "satellite", layer: imageryLayer, label: "Streets+Satellite" },
-]
-let currentBasemap = basemaps[0].id;
+const goldBasemap = new TileLayer({
+	source: new XYZ({
+		url: 'https://api.mapbox.com/styles/v1/legiongis/cky94td2i231f15ol21yudv39/tiles/{z}/{x}/{y}?access_token='+mbToken,
+		tileSize: 512,
+	}),
+	opacity: 0,	
+});
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
 
 function TrackMap (elementId) {
 	const el = document.getElementById(elementId);
 	const map = new Map({
 		target: el,
-		// layers: [basemaps[0]],
 		view: new View({
-		center: [-90, 30],
-		zoom: 1,
-		maxZoom: 8,
-		})
+			center: mgFountain,
+			zoom: 16,
+		}),
+		controls: [],
 	});
 
-	map.addLayer(imageryLayer)
+	map.addLayer(bgBasemap)
+	map.addLayer(goldBasemap)
 
 	self.map = map;
 }
@@ -89,10 +98,23 @@ function startSession () {
 	.then( openWebSocket() );
 }
 
-onMount(() => {
+async function getWeird() {
+	let opacity = 0;
+	let fadeIn = true;
+	let increment = .1
+	while (true) {
+		await sleep(100);
+		if (opacity >= 1) { fadeIn = false }
+		if (opacity <= 0) { fadeIn = true}
+		opacity = fadeIn ? opacity + increment : opacity - increment;
+		goldBasemap.setOpacity(opacity);
+	}
+}
 
+onMount(() => {
 	mapView = new TrackMap("map");
 	startSession();
+	getWeird();
 });
 
 </script>
