@@ -23,6 +23,7 @@ let mapView;
 let data;
 let positions = [];
 let devices = [];
+let carList = {};
 
 const mbToken = MAPBOX_TOKEN;
 const tcToken = TC_TOKEN;
@@ -32,6 +33,47 @@ const mgFountain = fromLonLat([-90.0947302, 30.0255355]);
 const osmLayer = new TileLayer({
   source: new OSM(),
 })
+
+const markerSource = new VectorSource();
+const carLayer = new VectorLayer({
+    source: markerSource,
+  });
+
+class Car {
+
+	constructor(id, name) {
+		this.id = id;
+		this.name = name;
+	}
+
+	updatePosition(newLngLat) {
+		this.position = newLngLat;
+	}
+	
+}
+
+$: {
+	devices.forEach( function (device) {
+		// enable this line to create a new point for every socket message
+		// device.id = Math.floor(Math.random() * 1000);
+		let feature = markerSource.getFeatureById(device.id)
+		if (feature == null) {
+			feature = new Feature ();
+			feature.setId(device.id)
+			feature.setProperties({"name": device.name})
+			markerSource.addFeature(feature);
+		}
+		positions.forEach( function (position) {
+			console.log(position.deviceId)
+			console.log(feature.getId())
+			if (position.deviceId == feature.getId()) {
+				let p = fromLonLat([position.longitude, position.latitude])
+				feature.setGeometry(new Point(p))
+			}
+		});
+	})
+	console.log(markerSource.getFeatures())
+}
 
 const bgBasemap = new TileLayer({
 	source: new XYZ({
@@ -64,8 +106,9 @@ function TrackMap (elementId) {
 		controls: [],
 	});
 
-	map.addLayer(bgBasemap)
-	map.addLayer(goldBasemap)
+	map.addLayer(bgBasemap);
+	map.addLayer(goldBasemap);
+	map.addLayer(carLayer);
 
 	self.map = map;
 }
@@ -73,7 +116,6 @@ function TrackMap (elementId) {
 function openWebSocket() {
 
 	const socket = new WebSocket("wss://tracker.toulouse.casa/gps/api/socket");
-
 	socket.onclose = function (event) {
 		console.log("closed socket");
 	}
