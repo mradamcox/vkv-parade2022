@@ -21,6 +21,7 @@ import {fromLonLat} from 'ol/proj';
 
 let map;
 let data;
+let track = true;
 let positions = [];
 let devices = [];
 let carList = {};
@@ -36,8 +37,8 @@ const osmLayer = new TileLayer({
 
 const markerSource = new VectorSource();
 const carLayer = new VectorLayer({
-    source: markerSource,
-  });
+	source: markerSource,
+});
 
 class Car {
 
@@ -54,7 +55,7 @@ class Car {
 
 $: {
 	devices.forEach( function (device) {
-		// enable this line to create a new point for every socket message
+		// uncomment this line to create a new point for every socket message
 		// device.id = Math.floor(Math.random() * 1000);
 		let feature = markerSource.getFeatureById(device.id)
 		if (feature == null) {
@@ -70,7 +71,7 @@ $: {
 			}
 		});
 	})
-	if (map && markerSource.getFeatures().length > 0) {
+	if (map && markerSource.getFeatures().length > 0 && track) {
 		map.getView().fit(markerSource.getExtent(), {
 			duration: 1000,
 			maxZoom: 19,
@@ -114,39 +115,30 @@ function TrackMap (elementId) {
 	map.addLayer(goldBasemap);
 	map.addLayer(carLayer);
 
-	self.map = map;
+}
+
+function startSession () {
+	fetch("https://tracker.toulouse.casa/gps/api/session?token="+tcToken)
+	.then((repsonse) => { openWebSocket() } )
+	.catch((error) => {
+		console.log(error)
+	});
 }
 
 function openWebSocket() {
 
-	const socket = new WebSocket("wss://tracker.toulouse.casa/gps/api/socket");
-	socket.onclose = function (event) {
-		console.log("closed socket");
-	}
+        const socket = new WebSocket("wss://tracker.toulouse.casa/gps/api/socket");
+        socket.onmessage = function (event) {
+                data = JSON.parse(event.data);
+                if (data.positions) { positions = data.positions }
+                if (data.devices) { devices = data.devices }
+        }
 
-	socket.onmessage = function (event) {
-		data = JSON.parse(event.data);
-		if (data.positions) { positions = data.positions }
-		if (data.devices) { devices = data.devices }
-	}
-
-}
-
-function startSession () {
-	fetch("https://tracker.toulouse.casa/gps/api/session?token="+tcToken, {
-		method: "POST",
-		dataType: "json",
-		contentType: "application/json",
-		headers: {
-			"Content-Type": "application/json",
-		},
-	})
-	.then( openWebSocket() );
 }
 
 async function getWeird() {
+        let fadeIn;
 	let opacity = 0;
-	let fadeIn = true;
 	let increment = .1
 	while (true) {
 		await sleep(100);
@@ -167,7 +159,7 @@ onMount(() => {
 
 <main>
 	<div id="map"></div>
-	<button disabled style="position:absolute; right:0; top:0;">refresh</button>
+	<label style="position:absolute; right:0; top:0;">track <input type="checkbox" bind:checked={track}></label>
 	<div style="position:absolute; right:0; top:50px; background:red;">
 		{#each devices as device}
 		{device.id}: {device.name}
@@ -181,6 +173,11 @@ onMount(() => {
 </main>
 
 <style>
+
+main {
+	font-family: sans-serif;
+}
+
 #map {
 	width: 100%;
 	height: 100vh;
