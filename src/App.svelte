@@ -28,6 +28,7 @@ let carList = {};
 
 const mbToken = MAPBOX_TOKEN;
 const tcToken = TC_TOKEN;
+const server = SERVER;
 
 const mgFountain = fromLonLat([-90.0947302, 30.0255355]);
 
@@ -118,8 +119,8 @@ function TrackMap (elementId) {
 }
 
 function startSession () {
-	fetch("https://tracker.toulouse.casa/gps/api/session?token="+tcToken)
-	.then((repsonse) => { openWebSocket() } )
+	fetch("https://"+server+"/api/session?token="+tcToken)
+	.then((response) => { openWebSocket() } )
 	.catch((error) => {
 		console.log(error)
 	});
@@ -127,7 +128,7 @@ function startSession () {
 
 function openWebSocket() {
 
-        const socket = new WebSocket("wss://tracker.toulouse.casa/gps/api/socket");
+        const socket = new WebSocket("wss://"+server+"/gps/api/socket");
         socket.onmessage = function (event) {
                 data = JSON.parse(event.data);
                 if (data.positions) { positions = data.positions }
