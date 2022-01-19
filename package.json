@@ -21,6 +21,7 @@
   },
   "dependencies": {
     "ol": "^6.11.0",
+    "qrcode-generator": "^1.4.4",
     "sirv-cli": "^2.0.0"
   }
 }

@@ -1,5 +1,6 @@
 <script>
 import {onMount} from 'svelte';
+import qrcode from 'qrcode-generator';
 
 import 'ol/ol.css';
 import Map from 'ol/Map';
@@ -7,6 +8,7 @@ import View from 'ol/View';
 import Feature from 'ol/Feature';
 
 import Point from 'ol/geom/Point';
+import Overlay from 'ol/Overlay';
 
 import VectorSource from 'ol/source/Vector';
 import OSM from 'ol/source/OSM';
@@ -28,12 +30,21 @@ let carList = {};
 
 const mbToken = MAPBOX_TOKEN;
 const tcToken = TC_TOKEN;
-const server = SERVER;
+const baseUrl = SERVER_BASEURL;
+
+//if (baseUrl.startsWith("https")) {
+ // const socketUrl = baseUrl.replace("https","wss");
+//} else {
+//  const socketUrl = baseUrl.replace("http","ws");
+//}
+
+const socketUrl = baseUrl.startsWith("https") ? baseUrl.replace("https","wss") : baseUrl.replace("http","ws");
+console.log(socketUrl);
 
 const mgFountain = fromLonLat([-90.0947302, 30.0255355]);
 
 const osmLayer = new TileLayer({
-  source: new OSM(),
+	source: new OSM(),
 })
 
 const markerSource = new VectorSource();
@@ -119,7 +130,7 @@ function TrackMap (elementId) {
 }
 
 function startSession () {
-	fetch("https://"+server+"/api/session?token="+tcToken)
+	fetch(baseUrl+"/api/session?token="+tcToken)
 	.then((response) => { openWebSocket() } )
 	.catch((error) => {
 		console.log(error)
@@ -128,7 +139,7 @@ function startSession () {
 
 function openWebSocket() {
 
-        const socket = new WebSocket("wss://"+server+"/gps/api/socket");
+        const socket = new WebSocket(socketUrl+"/api/socket");
         socket.onmessage = function (event) {
                 data = JSON.parse(event.data);
                 if (data.positions) { positions = data.positions }
@@ -150,10 +161,16 @@ async function getWeird() {
 	}
 }
 
+const qr = qrcode(4, 'L');
+qr.addData('Hi!');
+qr.make();
+
+
 onMount(() => {
 	const mapView = new TrackMap("map");
 	startSession();
 	getWeird();
+	document.getElementById('placeholder').innerHTML = qr.createImgTag();
 });
 
 </script>
@@ -161,6 +178,7 @@ onMount(() => {
 <main>
 	<div id="map"></div>
 	<label style="position:absolute; right:0; top:0;">track <input type="checkbox" bind:checked={track}></label>
+
 	<div style="position:absolute; right:0; top:50px; background:red;">
 		{#each devices as device}
 		{device.id}: {device.name}
@@ -171,6 +189,8 @@ onMount(() => {
 			{/each}
 		{/each}
 	</div>
+	<div id="placeholder" style="position:absolute; right:0; top:100px;"></div>
+
 </main>
 
 <style>
