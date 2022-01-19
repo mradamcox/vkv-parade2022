@@ -41,7 +41,7 @@ const baseUrl = SERVER_BASEURL;
 const socketUrl = baseUrl.startsWith("https") ? baseUrl.replace("https","wss") : baseUrl.replace("http","ws");
 console.log(socketUrl);
 
-const mgFountain = fromLonLat([-90.0947302, 30.0255355]);
+const mgFountain = fromLonLat([-90.0361081, 29.9694733]);
 
 const osmLayer = new TileLayer({
 	source: new OSM(),
@@ -52,45 +52,106 @@ const carLayer = new VectorLayer({
 	source: markerSource,
 });
 
+let cars = {};
+
 class Car {
 
 	constructor(id, name) {
 		this.id = id;
+		this.divId = "car-"+id;
 		this.name = name;
+		this.overlay = null;
+		this.addOverlay();
+
 	}
 
 	updatePosition(newLngLat) {
-		this.position = newLngLat;
+		console.log(this.id + ": setting new position: " + newLngLat);
+		if (this.overlay != null) {
+			this.overlay.setPosition(newLngLat);
+		}
 	}
+
+	addOverlay() {
+	// create a new Overlay, fill it with a QR code that is the
+	// car's name, and add it to the map
+		let div = document.createElement("div");
+		div.id = this.divId;
+		const qr = qrcode(2, 'L');
+		qr.addData(this.name);
+		qr.make();
+		div.innerHTML = qr.createImgTag();
+		document.body.appendChild(div);
+		this.overlay = new Overlay({
+                        element: div,
+			className: 'ol-overlay-container ol-selectable animation_move',
+			autoPan: true,
+                });
+		//document.body.appendChild(div);
+		map.addOverlay(this.overlay);
+	}
+
+	removeOverlay() {
+	// remove the Overlay for this car from the map.
+	}		
 	
 }
 
-$: {
-	devices.forEach( function (device) {
+function setPositions(positions) {
+	// update the position of all cars
+	positions.forEach( function (position) {
+                if (cars[position.deviceId]) {
+			console.log("setting new position for");
+			console.log(cars[position.deviceId])
+			let p = fromLonLat([position.longitude, position.latitude]);
+			cars[position.deviceId].updatePosition(p);
+		}
+	});
+}
+
+$: setPositions(positions);
+
+function setCars(devices) {
+        // update the position of all cars
+        devices.forEach( function (device) {
+                if (!cars[device.id]) {
+                        console.log("create car");
+			cars[device.id] = new Car(device.id, device.name)
+
+                }
+        });
+	console.log(cars)
+}
+
+$: setCars(devices);
+
+
+//{
+//	devices.forEach( function (device) {
 		// uncomment this line to create a new point for every socket message
 		// device.id = Math.floor(Math.random() * 1000);
-		let feature = markerSource.getFeatureById(device.id)
-		if (feature == null) {
-			feature = new Feature ();
-			feature.setId(device.id)
-			feature.setProperties({"name": device.name})
-			markerSource.addFeature(feature);
-		}
-		positions.forEach( function (position) {
-			if (position.deviceId == feature.getId()) {
-				let p = fromLonLat([position.longitude, position.latitude])
-				feature.setGeometry(new Point(p))
-			}
-		});
-	})
-	if (map && markerSource.getFeatures().length > 0 && track) {
-		map.getView().fit(markerSource.getExtent(), {
-			duration: 1000,
-			maxZoom: 19,
-			padding: [100, 100, 100, 100],
-		});
-	}
-}
+//		let feature = markerSource.getFeatureById(device.id)
+//		if (feature == null) {
+//			feature = new Feature ();
+//			feature.setId(device.id)
+//			feature.setProperties({"name": device.name})
+//			markerSource.addFeature(feature);
+//		}
+//		positions.forEach( function (position) {
+//			if (position.deviceId == feature.getId()) {
+//				let p = fromLonLat([position.longitude, position.latitude])
+//				feature.setGeometry(new Point(p))
+//			}
+//		});
+//	})
+//	if (map && markerSource.getFeatures().length > 0 && track) {
+//		map.getView().fit(markerSource.getExtent(), {
+//			duration: 1000,
+//			maxZoom: 19,
+//			padding: [100, 100, 100, 100],
+//		});
+//	}
+//}
 
 const bgBasemap = new TileLayer({
 	source: new XYZ({
@@ -118,7 +179,7 @@ function TrackMap (elementId) {
 		target: el,
 		view: new View({
 			center: mgFountain,
-			zoom: 16,
+			zoom: 13,
 		}),
 		controls: [],
 	});
@@ -161,16 +222,10 @@ async function getWeird() {
 	}
 }
 
-const qr = qrcode(4, 'L');
-qr.addData('Hi!');
-qr.make();
-
-
 onMount(() => {
 	const mapView = new TrackMap("map");
 	startSession();
 	getWeird();
-	document.getElementById('placeholder').innerHTML = qr.createImgTag();
 });
 
 </script>
@@ -209,4 +264,13 @@ main {
 		max-width: none;
 	}
 }
+
+.animation_move {
+    -webkit-transition: all 0.7s ease-out;
+    -moz-transition: all 0.7s ease-out;
+    -ms-transition: all 0.7s ease-out;
+    -o-transition: all 0.7s ease-out;
+    transition: all 0.7s ease-out;
+}
+
 </style>
