@@ -24,6 +24,7 @@ import {fromLonLat} from 'ol/proj';
 let map;
 let data;
 let track = true;
+let showQRs = true;
 let positions = [];
 let devices = [];
 let carList = {};
@@ -191,7 +192,15 @@ function TrackMap (elementId) {
 }
 
 function startSession () {
-	fetch(baseUrl+"/api/session?token="+tcToken)
+//	fetch(baseUrl+"/api/session?token="+tcToken, {
+      fetch(baseUrl+"/api/session", {
+//		method: "post",
+		headers: {
+//			'Accept': 'application/json',
+ //                       'Content-Type': ' application/json',
+			"Authorization": "Basic " + btoa("a:a")
+		}
+	})
 	.then((response) => { openWebSocket() } )
 	.catch((error) => {
 		console.log(error)
@@ -233,7 +242,7 @@ onMount(() => {
 <main>
 	<div id="map"></div>
 	<label style="position:absolute; right:0; top:0;">track <input type="checkbox" bind:checked={track}></label>
-
+	<label style="position:absolute; right:0; top:10px;">give me qr <input type="checkbox" bind:checked={showQRs}></label>
 	<div style="position:absolute; right:0; top:50px; background:red;">
 		{#each devices as device}
 		{device.id}: {device.name}
