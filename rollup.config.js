@@ -54,6 +54,8 @@ export default {
 		replace({
 			MAPBOX_TOKEN: JSON.stringify(process.env.MAPBOX_TOKEN),
 			TC_TOKEN: JSON.stringify(process.env.TC_TOKEN),
+			TC_USER: JSON.stringify(process.env.TC_USER),
+			TC_PASSWORD: JSON.stringify(process.env.TC_PASSWORD),
 			SERVER_BASEURL: JSON.stringify(process.env.SERVER_BASEURL),
 		}),
 
